@@ -1,0 +1,133 @@
+package main
+
+import "log"
+
+type LRUCache struct {
+	capacity   int
+	size       int
+	keyNodeMap map[int]*LinkNode
+	head, tail *LinkNode
+}
+
+type LinkNode struct {
+	key, value int
+	pre, next  *LinkNode
+}
+
+func Constructor(lcapacity int) LRUCache {
+	l := LRUCache{
+		capacity:   lcapacity,
+		keyNodeMap: make(map[int]*LinkNode),
+	}
+	l.head = initDoubleLinkedListNode(0, 0)
+	l.tail = initDoubleLinkedListNode(0, 0)
+	l.head.next = l.tail
+	l.tail.pre = l.head
+
+	return l
+}
+
+func initDoubleLinkedListNode(ikey, ivalue int) *LinkNode {
+	return &LinkNode{
+		key:   ikey,
+		value: ivalue,
+	}
+}
+
+func (l *LRUCache) moveToHead(node *LinkNode) bool {
+	// 移动：先删除表尾，再新增到表头
+	l.deleteNode(node)
+	l.addToHead(node)
+	return true
+}
+
+func (l *LRUCache) addToHead(node *LinkNode) bool {
+	// 表头新增
+	node.pre = l.head
+	node.next = l.head.next
+	node.pre.next = node
+	node.next.pre = node
+	return true
+}
+
+func (l *LRUCache) deleteNode(node *LinkNode) *LinkNode {
+	node.pre.next = node.next
+	node.next.pre = node.pre
+	return node
+}
+
+// 仅用于长度不够
+func (l *LRUCache) deleteTail() *LinkNode {
+	// 表尾删除
+	node := l.tail.pre
+	node.pre.next = l.tail
+	l.tail.pre = node.pre
+	return node
+}
+
+func (l *LRUCache) Get(key int) int {
+	// 如果key不存在则返回-1
+	if _, ok := l.keyNodeMap[key]; !ok {
+		return -1
+	}
+	// 若key存在则从map中获取链表节点地址，将节点移动到表头，最后返回节点地址
+	node := l.keyNodeMap[key]
+	l.moveToHead(node) // 新增
+
+	return node.value
+}
+
+func (l *LRUCache) Put(key int, value int) {
+	// 若key不存在则直接将数据存入表头
+	// 新增了数据，因此判定长度是否大于最大长度，若是则删除尾部元素
+	existNode, ok := l.keyNodeMap[key]
+	if !ok {
+		// 初始化一个node，添加到表头，长度增加1，添加到map
+		node := initDoubleLinkedListNode(key, value) // 新增
+		l.addToHead(node)
+		l.keyNodeMap[key] = node
+		l.size++
+
+		// 判定长度不合法删除尾部元素
+		if l.size > l.capacity {
+			deleteNode := l.deleteTail()
+			delete(l.keyNodeMap, deleteNode.key)
+			l.size--
+		}
+	} else {
+		// 若存在，更新数据，将节点移动到表头，添加到map
+		existNode.value = value
+		l.keyNodeMap[key] = existNode
+		l.moveToHead(existNode)
+	}
+}
+
+func (l *LRUCache) printList() {
+	if l.size == 0 {
+		return
+	}
+	node := l.head.next
+	for ; node != l.tail; node = node.next {
+		log.Printf("l.node.key[%v], l.node.value[%v]\n", node.key, node.value)
+	}
+}
+
+func main_like() {
+	l := Constructor(2)
+	l.Put(1, 1)
+	l.Put(2, 2)
+	log.Printf("map: %v\n", l.keyNodeMap)
+	l.printList()
+	log.Println("l.Get(1): ", l.Get(1))
+	l.Put(3, 3)
+	log.Printf("map: %v\n", l.keyNodeMap)
+	l.printList()
+	log.Println("l.Get(2): ", l.Get(2))
+	log.Println("l.Get(3): ", l.Get(3))
+	l.Put(4, 4)
+	log.Printf("map: %v\n", l.keyNodeMap)
+	l.printList()
+	log.Println("l.Get(1): ", l.Get(1))
+	log.Println("l.Get(1): ", l.Get(3))
+	log.Println("l.Get(1): ", l.Get(4))
+}
