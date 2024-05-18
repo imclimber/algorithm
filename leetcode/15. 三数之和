@@ -1,0 +1,68 @@
+package main
+
+import "log"
+
+// 用冒泡，待优化
+func sortArray(nums []int) {
+	for i := 0; i < len(nums); i++ {
+		for j := 0; j < len(nums)-i-1; j++ {
+			if nums[j] > nums[j+1] {
+				nums[j], nums[j+1] = nums[j+1], nums[j]
+			}
+		}
+	}
+}
+
+func threeSum(nums []int) [][]int {
+	if len(nums) == 0 {
+		return nil
+	}
+	result := make([][]int, 0)
+	// 现将数组按照升序排序
+	sortArray(nums)
+	log.Println("after sort: ", nums)
+	// 使用双指针处理：
+	//i指向第一个元组，j指向最左元素，k指向最后元素
+	//nums[i]大于0则下一个，nums[i]重复则下一个
+	//nums[j]碰到nums[i]+nums[j]+nums[k]<0则j后移，num[k]碰到nums[i]+nums[j]+nums[k]>0则k前移
+	for i := 0; i < len(nums); i++ {
+		if nums[i] > 0 {
+			break
+		}
+		if i > 0 && nums[i] == nums[i-1] {
+			// 相同元素跳过
+			continue
+		}
+		j, k := i+1, len(nums)-1
+		for j < k && j < len(nums)-1 && k >= 0 {
+			if nums[i]+nums[j]+nums[k] == 0 {
+				result = append(result, []int{nums[i], nums[j], nums[k]})
+				j++
+				k--
+				for j < k && nums[j] == nums[j-1] {
+					j++
+				}
+				for j < k && nums[k] == nums[k+1] {
+					k--
+				}
+			} else if nums[i]+nums[j]+nums[k] < 0 {
+				j++
+				for j < k && nums[j] == nums[j-1] {
+					j++
+				}
+			} else if nums[i]+nums[j]+nums[k] > 0 {
+				k--
+				for j < k && nums[k] == nums[k+1] {
+					k--
+				}
+			}
+		}
+	}
+	return result
+}
+
+func main_like() {
+	nums := []int{-1, 0, 1, 2, -1, -4}
+	result := threeSum(nums)
+	log.Println("result: ", result)
+}
