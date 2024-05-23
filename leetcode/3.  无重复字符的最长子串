@@ -1,0 +1,65 @@
+package main
+
+import "log"
+
+//// 效率较低：没有考虑场景例如：往右移动时，如果找到了最长子串，则左边索引往右移动时，右边索引一定是往右的
+//// 滑动窗口+map，若map没有值，则说明长度可以继续增加，如果存在则需要移除最左侧的元素，且长度减一
+//func lengthOfLongestSubstring(s string) int {
+//	count := 0
+//	maxLen := 0
+//	smap := make(map[uint8]struct{})
+//	left := 0
+//	i := 0
+//	for i < len(s) {
+//		if _, ok := smap[s[i]]; !ok {
+//			smap[s[i]] = struct{}{}
+//			count++
+//			i++
+//
+//			// 每次都要将count和最大长度比较，因为count仅在遍历到最大子串时会存在一次最大值，其余时候可能会被后面相同的字符串减下去
+//			if maxLen < count {
+//				maxLen = count
+//			}
+//		} else {
+//			// 如果map有值，说明当前i指向的是重复元素，则此时i不动，然后：将最左侧left所指向的元素从map删除，且left右移一位，继续判定是否存在重复元素，存在则继续删除
+//			delete(smap, s[left])
+//			left++
+//			count--
+//		}
+//	}
+//	return maxLen
+//}
+
+// 效率不是很高
+func lengthOfLongestSubstring(s string) int {
+	r := 0
+	maxLen := 0
+	count := 0
+	// i 作为左指针，依次向右移动。每移动一次，右指针负责找到最长的子串
+	smap := make(map[uint8]int)
+	for i := 0; i < len(s); i++ {
+		// 利用右指针找到最大的子串，并记录到maxLen
+		for r < len(s) && smap[s[r]] == 0 {
+			smap[s[r]]++
+			count++
+			r++
+		}
+		if maxLen < count {
+			maxLen = count
+		}
+		// i每次移动，都要将原来位置的元素删除，防止干扰后面的子串
+		delete(smap, s[i])
+		// 每次移动i需要将count减一
+		count--
+	}
+	return maxLen
+}
+
+func main_like() {
+	s1 := "abcabcbb"
+	s2 := "bbbbb"
+	s3 := "pwwkew"
+	log.Println("result: s1", lengthOfLongestSubstring(s1))
+	log.Println("result: s2", lengthOfLongestSubstring(s2))
+	log.Println("result: s3", lengthOfLongestSubstring(s3))
+}
