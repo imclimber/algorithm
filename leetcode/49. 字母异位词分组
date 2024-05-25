@@ -1,0 +1,67 @@
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"sort"
+)
+
+// 字符串排序法，空间性能稍好，时间性能稍差
+func getMapKeySort(str string) string {
+	// 字符串str排序
+	eleArray := []byte(str)
+	sort.Slice(eleArray, func(i, j int) bool {
+		return eleArray[i] < eleArray[j]
+	})
+	res := string(eleArray)
+	return res
+}
+
+// 字符频率数组法，空间性能低，时间性能稍好
+func getMapKeyFreq(str string) [26]int {
+	freqArray := [26]int{}
+	for _, ele := range str {
+		freqArray[ele-'a']++
+	}
+	return freqArray
+}
+
+// 字母异位词分组
+/*
+1、构建map，若后续元素已经在map中且相等，则追加到map的value列表中
+map[string][]string 异位词放到同一个key对应的列表中
+2、相等判定：排序后相同，或者频率数组相同
+*/
+func groupAnagrams(strs []string) [][]string {
+	//smap := make(map[string][]string)
+	smap := make(map[[26]int][]string)
+	results := make([][]string, 0)
+	for _, str := range strs {
+		//res := getMapKeySort(str)
+		res := getMapKeyFreq(str)
+		smap[res] = append(smap[res], str)
+
+		//log.Printf("smap: key[%v], value[%v]\n", strKey, smap[strKey])
+	}
+	for _, value := range smap {
+		results = append(results, value)
+	}
+	return results
+}
+
+func main_like() {
+	strs := []string{"eat", "tea", "tan", "ate", "nat", "bat"}
+	res := groupAnagrams(strs)
+	resArray, _ := json.Marshal(res)
+	log.Println("res: ", string(resArray))
+
+	strs1 := []string{""}
+	res1 := groupAnagrams(strs1)
+	resArray1, _ := json.Marshal(res1)
+	log.Println("res1: ", string(resArray1))
+
+	strs2 := []string{"a"}
+	res2 := groupAnagrams(strs2)
+	resArray2, _ := json.Marshal(res2)
+	log.Println("res2: ", string(resArray2))
+}
