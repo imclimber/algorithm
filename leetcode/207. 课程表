@@ -1,0 +1,184 @@
+package main
+
+// 图论：课程表：第一种解法：广度优先遍历 - map存储邻接数据
+// 入度表数组：下标为每个课程编号，值为入度数值
+// 出度邻接二维表map：key为先修课程，value数组表示key的后修课程
+// 方案：先将所有入度为0的数据放到队列中，然后每次取对首值，将队首值到邻接表中获取所有相关后修课程列表，将列表中所有课程的入度表对应的入度值减一，然后判定是否为0，如果为0，则将其放到队列最后。
+// 依次执行队列的所有值，每次出队列，count加1，如果最终count等于总课程数，表示存在拓扑排序，即可以修完所有课程
+func canFinish_cross_map(numCourses int, prerequisites [][]int) bool {
+	if numCourses == 0 || len(prerequisites) == 0 {
+		return false
+	}
+	// 构造邻接表和入度表，prerequisites[i][0] 表示后修课程；prerequisites[i][1]表示先修课程，作为map的key
+	// 如果prerequisites中二元组没有课程编号，表示其没有先修课程，则在入度表中无需赋值，在map中不存在key
+	adjmap := make(map[int][]int)
+	inputArr := make([]int, numCourses)
+	for i := 0; i < len(prerequisites); i++ {
+		if _, ok := adjmap[prerequisites[i][1]]; ok {
+			adjmap[prerequisites[i][1]] = append(adjmap[prerequisites[i][1]], prerequisites[i][0])
+		} else {
+			adjmap[prerequisites[i][1]] = make([]int, 0)
+			adjmap[prerequisites[i][1]] = append(adjmap[prerequisites[i][1]], prerequisites[i][0])
+		}
+		// 二元组的第一个元素是入度目标
+		inputArr[prerequisites[i][0]]++
+	}
+	//log.Println("adjmap: ", adjmap)
+	//log.Println("inputArr: ", inputArr)
+	// 初始化队列，特别注意：queue 中的值是课程号，不是入度值
+	queue := make([]int, 0)
+	for i := 0; i < len(inputArr); i++ {
+		if inputArr[i] == 0 {
+			queue = append(queue, i)
+		}
+	}
+	//log.Println("queue: ", queue)
+	// 遍历队列，队列元素到邻接表获取邻杰元素数组，将数组元素到入度表中减去1个入度，判定为0则入队列
+	count := 0
+	for len(queue) > 0 {
+		// 每次取头元素并删除头元素
+		selected := queue[0]
+		count++
+		queue = queue[1:]
+		// 利用头元素获取邻接列表
+		if adjArr, ok := adjmap[selected]; !ok {
+			// 不在临接表，表示入度为0，跳过
+			//log.Println("selected data has zero RUDU")
+			continue
+		} else {
+			// 邻接列表到入度表减一，对应selected被删除（adjArr[i]的值为入度表数组的下标，即课程编号）
+			for i := 0; i < len(adjArr); i++ {
+				inputArr[adjArr[i]]--
+				// 减1后，如果对应的入度表的值为0表示入度为0，需要进行邻接遍历，append（课程编号，即adjArr[i]）到队列
+				if inputArr[adjArr[i]] == 0 {
+					queue = append(queue, adjArr[i])
+				}
+			}
+			//log.Println("for with queue: ", queue)
+		}
+	}
+	return count == numCourses
+}
+
+// 图论：课程表：第一种解法：广度优先遍历 - 数组存储邻接数据
+// 入度表数组：下标为每个课程编号，值为入度数值
+// 出度邻接二维表：下标为先修课程，value数组表示下标的后修课程
+// 方案：先将所有入度为0的数据放到队列中，然后每次取对首值，将队首值到邻接表中获取所有相关后修课程列表，将列表中所有课程的入度表对应的入度值减一，然后判定是否为0，如果为0，则将其放到队列最后。
+// 依次执行队列的所有值，每次出队列，count加1，如果最终count等于总课程数，表示存在拓扑排序，即可以修完所有课程
+func canFinish_cross_arr(numCourses int, prerequisites [][]int) bool {
+	if numCourses == 0 || len(prerequisites) == 0 {
+		return true
+	}
+	// 构造邻接二维表：prerequisites[i][1]表示先修课程作为adjTwoArr二维数组的下标（即需要赋值的下标）；prerequisites[i][0] 表示后修课程，作为先修课程的属性列表
+	// 构造入度表：如果prerequisites中二元组没有课程编号，表示其没有先修课程，即入度为0，则在入度表中无需赋值；否则将prerequisites[i][0]作为下标，且值加1
+	adjTwoArr := make([][]int, numCourses)
+	inputArr := make([]int, numCourses)
+	for i := 0; i < len(prerequisites); i++ {
+		// 不要对二维数组的第二维make新数组，否则邻接信息中只有一个值
+		// 二维数组下标为先修课程；值为对应的后修课程列表
+		adjTwoArr[prerequisites[i][1]] = append(adjTwoArr[prerequisites[i][1]], prerequisites[i][0])
+		// 二元组的第一个元素是入度目标，作为需要赋值的下标
+		inputArr[prerequisites[i][0]]++
+	}
+	//log.Println("adjTwoArr: ", adjTwoArr)
+	//log.Println("inputArr: ", inputArr)
+	// 初始化队列，特别注意：queue 中的值是课程号，不是入度值
+	queue := make([]int, 0)
+	for i := 0; i < len(inputArr); i++ {
+		if inputArr[i] == 0 {
+			queue = append(queue, i)
+		}
+	}
+	//log.Println("queue: ", queue)
+	// 遍历队列，队列元素到邻接表获取邻杰元素数组，将数组元素到入度表中减去1个入度，判定为0则入队列
+	count := 0
+	for len(queue) > 0 {
+		// 每次取头元素并删除头元素
+		selected := queue[0]
+		count++
+		queue = queue[1:]
+		// 利用头元素获取邻接列表
+		adjArr := adjTwoArr[selected]
+		// 邻接表后修课程列表每个元素的入度值减一（入度表下标即为后修课程号），对应selected被删除
+		for i := 0; i < len(adjArr); i++ {
+			inputArr[adjArr[i]]--
+			// 减1后，如果对应的入度表的值为0表示入度为0，需要进行邻接遍历，append（课程编号，即adjArr[i]）到队列
+			if inputArr[adjArr[i]] == 0 {
+				queue = append(queue, adjArr[i])
+			}
+		}
+		//log.Println("for with queue: ", queue)
+	}
+	return count == numCourses
+}
+
+
+// 图论：课程表：第二种解法：深度优先遍历
+// 1、入度邻接二维表：后修课程依赖先修课程，先修课程作为下标，值为后修课程列表
+// 2、flags数组：下标为后修课程号（即所有课程号）， 0表示从未遍历过的初始值；1为从本地发起dfs遍历；-1表示遍历后回到发起处（即由其他邻接点发起的dfs遍历回溯）
+// 方案：从0号课程开始，到入度邻接二维表找到后修课程，每找到一个将flags对应课程号下标的值置位1表示遍历过一次，回溯后标-1，然后将后续课程每个都发起一次dfs调用
+func canFinish(numCourses int, prerequisites [][]int) bool {
+	// 邻接二维入度数组，下标为所有课程，需要赋值的为先修课程；值为后修课程，即prerequisites[i][0]
+	adjTwoArr := make([][]int, numCourses)
+	flags := make([]int, numCourses)
+	for i := 0; i < len(prerequisites); i++ {
+		adjTwoArr[prerequisites[i][1]] = append(adjTwoArr[prerequisites[i][1]], prerequisites[i][0])
+	}
+	//log.Println("adjTwoArr: ", adjTwoArr)
+	var res bool
+	// 遍历入口为入度为0的课程号
+	for i := 0; i < numCourses; i++ {
+		// 遍历所有入度为0的数组，只要每个（叶子节点）出发发起的遍历，没有环即可
+		res = dfs(adjTwoArr, flags, i)
+		if !res {
+			return false
+		}
+	}
+	return res
+}
+
+// j 为课程号，返回为dfs深度遍历是否无环，true表示无环，false表示有环无法修完所有课程
+func dfs(adjTwoArr [][]int, flags []int, j int) bool {
+	if flags[j] == 1 {
+		// 停止，表示有环
+		return false
+	}
+	if flags[j] == -1 {
+		// 已经遍历过了没有环，无需再遍历
+		return true
+	}
+	flags[j] = 1
+	adjArr := adjTwoArr[j]
+	// 遍历先修课程的所有后修课程列表
+	res := true
+	for i := 0; i < len(adjArr); i++ {
+		res = dfs(adjTwoArr, flags, adjArr[i])
+		if !res {
+			return false
+		}
+	}
+	flags[j] = -1
+	return res
+}
+
+func main_like() {
+	//numCourses := 1
+	//prerequisites := [][]int{}
+	//res := canFinish(numCourses, prerequisites)
+	//log.Println("res0: ", res)
+	//
+	//numCourses = 2
+	//prerequisites = [][]int{{1, 0}}
+	//res = canFinish(numCourses, prerequisites)
+	//log.Println("res1: ", res)
+	//
+	//numCourses = 2
+	//prerequisites = [][]int{{1, 0}, {0, 1}}
+	//res = canFinish(numCourses, prerequisites)
+	//log.Println("res2: ", res)
+	//
+	//numCourses = 5
+	//prerequisites = [][]int{{1, 4}, {2, 4}, {3, 1}, {3, 2}}
+	//res = canFinish(numCourses, prerequisites)
+	//log.Println("res3: ", res)
+}
